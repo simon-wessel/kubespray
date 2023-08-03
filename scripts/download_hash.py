@@ -4,7 +4,6 @@
 # run this script to update roles/download/defaults/main/main.yml
 # with new hashes.
 
-import hashlib
 import sys
 
 import requests
