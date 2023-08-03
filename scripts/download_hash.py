@@ -36,10 +36,19 @@ def download_hash(versions):
             for version in versions:
                 if not version.startswith("v"):
                     version = f"v{version}"
-                url = f"https://dl.k8s.io/release/{version}/bin/linux/{arch}/{download}"
-                download_file = requests.get(url, allow_redirects=True)
-                download_file.raise_for_status()
-                sha256sum = hashlib.sha256(download_file.content).hexdigest()
+                url = f"https://dl.k8s.io/release/{version}/bin/linux/{arch}/{download}.sha256"
+                hash_file = requests.get(url, allow_redirects=True)
+                if hash_file.status_code == 404:
+                    raise Exception(f"Unable to find hash file for release {version} (arch: {arch})")
+                if hash_file.status_code != 200:
+                    raise Exception(f"Received a non-200 HTTP response code: {hash_file.status_code} (arch: {arch}, version: {version})")
+                sha256sum = hash_file.content.decode().strip()
+                if len(sha256sum) != 64:
+                    raise Exception(f"Checksum has an unexpected length: {len(sha256sum)} (arch: {arch}, version: {version})")
+                if checksum_name not in data:
+                    data[checksum_name] = {}
+                if arch not in data[checksum_name]:
+                    data[checksum_name][arch] = {}
                 data[checksum_name][arch][version] = sha256sum
 
     with open(MAIN_YML, "w") as main_yml:
